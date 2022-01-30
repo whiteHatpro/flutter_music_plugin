@@ -3,6 +3,9 @@
 A music player flutter plugin that uses the native api to
 show the currently playing track with cover image and controls.
 
+**This plugin is still in development. The Android implementation
+is not finished yet.**
+
 > **Warning**: This plugin is written in Swift and Kotlin, so make
 > sure your project is setup to compile these languages.
 > 

@@ -87,7 +87,7 @@ public class SwiftMusicPlayerPlugin: NSObject, FlutterPlugin {
   func play(_ properties: NSDictionary) throws {
     let audioSession = AVAudioSession.sharedInstance()
 
-    try audioSession.setCategory(AVAudioSessionCategoryPlayback, mode: AVAudioSessionModeDefault, options: [])
+    try audioSession.setCategory(.playback, mode: .default, options: [])
     try audioSession.setActive(true)
 
     // Resetting values.
@@ -97,33 +97,32 @@ public class SwiftMusicPlayerPlugin: NSObject, FlutterPlugin {
     // immediately here.
     positionTimer?.invalidate()
     positionTimer = nil
-    
+
     let urlString = properties["url"] as! String
     let url = URL.init(string: urlString)
     if url == nil {
       throw MusicPlayerError.invalidUrl
     }
-    
+
     trackName = properties["trackName"] as! String
     albumName = properties["albumName"] as! String
     artistName = properties["artistName"] as! String
-    
-    print("URL: \(String(describing: url))")
+
     let playerItem = AVPlayerItem.init(url: url!)
-    
-    
+
+
     itemStatusObserver = playerItem.observe(\AVPlayerItem.status) { [unowned self] playerItem, _ in
       self.itemStatusChanged(playerItem.status)
     }
-    
+
     durationObserver = playerItem.observe(\AVPlayerItem.duration) { [unowned self] playerItem, _ in
       self.durationChanged()
     }
-    
+
     player.replaceCurrentItem(with: playerItem)
     player.play()
   }
-  
+
   func showCover(_ fileName: String) throws {
     let documentsUrl =  FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
     let imageUrl = documentsUrl.appendingPathComponent(fileName)
@@ -131,14 +130,14 @@ public class SwiftMusicPlayerPlugin: NSObject, FlutterPlugin {
     image = UIImage.init(data: imageData)
     updateInfoCenter()
   }
-  
+
   func updateInfoCenter() {
     var songInfo = [String : Any]()
-    songInfo[MPNowPlayingInfoPropertyPlaybackRate] = player.timeControlStatus == AVPlayerTimeControlStatus.playing ? 1.0 : 0.0
+    songInfo[MPNowPlayingInfoPropertyPlaybackRate] = player.timeControlStatus == AVPlayer.TimeControlStatus.playing ? 1.0 : 0.0
     songInfo[MPMediaItemPropertyTitle] = trackName
     songInfo[MPMediaItemPropertyAlbumTitle] = albumName
     songInfo[MPMediaItemPropertyArtist] = artistName
-    
+
     if duration != nil {
       songInfo[MPMediaItemPropertyPlaybackDuration] =  duration! / 1000
       songInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] =  (position * duration!) / 1000
@@ -146,68 +145,68 @@ public class SwiftMusicPlayerPlugin: NSObject, FlutterPlugin {
     if (image != nil) {
       songInfo[MPMediaItemPropertyArtwork] = MPMediaItemArtwork.init(image: image!)
     }
-    
+
     MPNowPlayingInfoCenter.default().nowPlayingInfo = songInfo
     MPNowPlayingInfoCenter.default().playbackState = player.rate == 0.0 ? .paused : .playing
   }
-  
+
   func pause() {
     player.pause()
   }
-  
+
   func resume() {
     player.play()
   }
-  
-  
+
+
   func timeControlStatusChanged(_ status: AVPlayer.TimeControlStatus) {
     switch (status) {
     case AVPlayer.TimeControlStatus.playing:
       print("Playing.")
       channel.invokeMethod("onIsPlaying", arguments: nil)
-      
+
     case AVPlayer.TimeControlStatus.paused:
       print("Paused.")
       channel.invokeMethod("onIsPaused", arguments: nil)
-      
+
     case AVPlayer.TimeControlStatus.waitingToPlayAtSpecifiedRate:
       print("Waiting to play at specified rate.")
       channel.invokeMethod("onIsLoading", arguments: nil)
     }
     updateInfoCenter()
   }
-  
-  
+
+
   func durationChanged() {
     var newDuration: Double?
-    
+
     if player.currentItem != nil && !CMTIME_IS_INDEFINITE(player.currentItem!.duration) {
       newDuration = player.currentItem!.duration.seconds * 1000
     }
-    
+
     if newDuration != duration {
       duration = newDuration
       channel.invokeMethod("onDuration", arguments: duration == nil ? nil : lround(duration!))
     }
     updateInfoCenter()
   }
-  
+
   func positionChanged(timer: Timer) {
     if duration == nil || player.currentItem == nil || CMTIME_IS_INDEFINITE(player.currentItem!.currentTime()) {
       // We don't want to do anything if we don't have a duration, currentItem or currentTime.
       return
     }
-    
+
     let positionInMs = player.currentItem!.currentTime().seconds * 1000
     let positionPercent = positionInMs / duration!
-    
+
     if positionPercent != position {
       position = positionPercent
       channel.invokeMethod("onPosition", arguments: position)
     }
   }
-  
-  func itemStatusChanged(_ status: AVPlayerItemStatus) {
+
+    func itemStatusChanged(_ status: AVPlayerItem.Status) {
     // Switch over status value
     switch status {
     case .readyToPlay:

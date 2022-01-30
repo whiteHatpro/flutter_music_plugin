@@ -1,6 +1,6 @@
 name: flutter plugin
 description: A flutter plugin to enable music playback with the native iOS and Android control centers.
-version: 0.0.2
+version: 0.0.3
 authors:
   - mohak srivastav <vs6778502@gmail.com>
 homepage: https://github.com/whiteHatpro/flutter_music_plugin

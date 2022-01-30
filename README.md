@@ -1,4 +1,4 @@
-# music_player
+# Music Player
 
 A music player flutter plugin that uses the native api to
 show the currently playing track with cover image and controls.

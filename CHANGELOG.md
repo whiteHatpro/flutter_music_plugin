@@ -1,3 +1,7 @@
+## 0.0.3
+
+- Change name to Music Player
+
 ## 0.0.2
 
 - Added more information to the project.

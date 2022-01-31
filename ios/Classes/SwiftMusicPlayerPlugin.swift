@@ -71,6 +71,9 @@ public class SwiftMusicPlayerPlugin: NSObject, FlutterPlugin {
         pause()
       case "resume":
         resume()
+         case "seek":
+                seek(call.arguments as! Double)
+
       case "showCover":
         try showCover(call.arguments as! String)
       default:
@@ -87,8 +90,10 @@ public class SwiftMusicPlayerPlugin: NSObject, FlutterPlugin {
   func play(_ properties: NSDictionary) throws {
     let audioSession = AVAudioSession.sharedInstance()
 
+
     try audioSession.setCategory(.playback, mode: .default, options: [])
     try audioSession.setActive(true)
+
 
     // Resetting values.
     self.duration = nil
@@ -121,6 +126,8 @@ public class SwiftMusicPlayerPlugin: NSObject, FlutterPlugin {
 
     player.replaceCurrentItem(with: playerItem)
     player.play()
+
+      NotificationCenter.default.addObserver(self, selector: #selector(videoDidPlayToEnd), name: .AVPlayerItemDidPlayToEndTime, object: playerItem)
   }
 
   func showCover(_ fileName: String) throws {
@@ -158,6 +165,16 @@ public class SwiftMusicPlayerPlugin: NSObject, FlutterPlugin {
     player.play()
   }
 
+    func seek(_ positionPercent: Double) {
+        if (duration == nil || player.currentItem == nil) { return; }
+        let to = CMTime.init(seconds: (duration! * positionPercent) / 1000, preferredTimescale: 1)
+        let tolerance = CMTime.init(seconds: 0.1, preferredTimescale: 1)
+        player.currentItem!.seek(to: to, toleranceBefore: tolerance, toleranceAfter: tolerance)
+      }
+
+      @objc func videoDidPlayToEnd() {
+        channel.invokeMethod("onCompleted", arguments: nil)
+      }
 
   func timeControlStatusChanged(_ status: AVPlayer.TimeControlStatus) {
     switch (status) {
